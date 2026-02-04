@@ -50,7 +50,39 @@ export class AuthService {
 
 }
 
+async login(userData: LoginDto) {
+ 
+  const user = await this.usersService.findByEmail(userData.email);
+  
+  if (!user) {
+    throw new UnauthorizedException('Invalid credentials');
+  }
 
+ 
+  const isPasswordValid = await bcrypt.compare(userData.password, user.password);
+  
+  if (!isPasswordValid) {
+    throw new UnauthorizedException('Invalid credentials');
+  }
+
+
+  const token = this.generateToken(
+    user._id.toString(),
+    user.email,
+    user.role || Role.PARTICIPANT
+  );
+
+ 
+  return {
+    token: token,
+    user: {
+      lastName: user.lastName,
+      firstName: user.firstName,
+      email: user.email,
+      role: user.role
+    }
+  };
+}
 }
     
 
