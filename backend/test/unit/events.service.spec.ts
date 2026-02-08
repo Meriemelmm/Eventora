@@ -57,7 +57,7 @@ describe('EventsService', () => {
     });
 
     describe('create', () => {
-    it('devrait créer un événement avec succès', async () => {
+    it('should create an event successfully', async () => {
       const createEventDto = {
         title: 'Test Event',
         description: 'Test Description',
@@ -76,7 +76,7 @@ describe('EventsService', () => {
   });
 
   describe("update event",()=>{
-    it("devrait  modifier  un événement avec succès",async()=>{
+    it("should update an event successfullys",async()=>{
          const updateEventDto = {
         title: 'Test Event',
     description: 'Test Description',
@@ -100,7 +100,7 @@ describe('EventsService', () => {
     
       
     })
-    it(" devrait lever NotFoundException si l’événement n’existe pas ",async()=>{
+    it(" should throw NotFoundException if event does not exists ",async()=>{
         mockEventModel.findById.mockReturnValue({
       exec: jest.fn().mockResolvedValue(null),
     });
@@ -108,15 +108,18 @@ describe('EventsService', () => {
     await expect(service.update(mockEventId, {})).rejects.toThrow(NotFoundException);
 
     })
-     it(" devrait lever BadRequestException si l’événement est annulé ",async()=>{
+     it(" should throw BadRequestException if event is canceled ",async()=>{
         const cancelEvent={...mockEvent,status: EventStatus.CANCELED};
          mockEventModel.findById.mockReturnValue({
       exec: jest.fn().mockResolvedValue(cancelEvent),
     });
         await  expect(service.update(mockEventId,{})).rejects.toThrow(BadRequestException);
+           await expect(
+        service.update(mockEventId, { title: 'New Title' }),
+      ).rejects.toThrow('Cannot update a cancelled event');
      })
    
-  it('devrait lever BadRequestException si maxCapacity < currentBookings', async () => {
+  it('should throw BadRequestException if maxCapacity is less than currentBookings', async () => {
     const event = { ...mockEvent, currentBookings: 50, maxCapacity: 100 };
     mockEventModel.findById.mockReturnValue({
       exec: jest.fn().mockResolvedValue(event),
@@ -125,10 +128,13 @@ describe('EventsService', () => {
     await expect(
       service.update(mockEventId, { maxCapacity: 20 })
     ).rejects.toThrow(BadRequestException);
+    
   });
+
+  
   })
    describe("update status event",()=>{
-     it("devrait modifier le status de evenement",async()=>{
+     it("should update event status from DRAFT to PUBLISHED",async()=>{
         const newStatus=EventStatus.PUBLISHED;
      mockEventModel.findById.mockReturnValue({exec:jest.fn().mockResolvedValue(mockEvent)});
       mockEvent.save.mockResolvedValue({...mockEvent,status:newStatus});
@@ -142,11 +148,11 @@ describe('EventsService', () => {
 
 
      })
-      it("devrait lever NotFoundException si l’événement n’existe pas",async()=>{
+      it("should throw NotFoundException if event does not exist",async()=>{
         mockEventModel.findById.mockReturnValue({exec:jest.fn().mockResolvedValue(null)});
         expect(service.updateStatus(mockEventId,EventStatus.PUBLISHED)).rejects.toThrow(NotFoundException);
       })
-       it('devrait lever BadRequestException si on tente de changer le status d’un publish a draft ',async()=>{
+       it('should throw BadRequestException when transitioning from PUBLISHED to DRAFT ',async()=>{
           const publishedEvent = { ...mockEvent, status: EventStatus.PUBLISHED };
     mockEventModel.findById.mockReturnValue({
       exec: jest.fn().mockResolvedValue(publishedEvent),
@@ -155,7 +161,7 @@ describe('EventsService', () => {
       .rejects
       .toThrow(BadRequestException);
        })
-        it('devrait lever BadRequestException si on tente de changer le status d’un CANCELED', async () => {
+        it('should throw BadRequestException when changing status of a canceled event', async () => {
     const canceledEvent = { ...mockEvent, status: EventStatus.CANCELED };
     mockEventModel.findById.mockReturnValue({
       exec: jest.fn().mockResolvedValue(canceledEvent),
@@ -165,7 +171,7 @@ describe('EventsService', () => {
       .rejects
       .toThrow(BadRequestException);
   });
-   it('devrait lever BadRequestException pour une transition invalide DRAFT → DRAFT', async () => {
+   it('should throw BadRequestException for invalid transition from DRAFT', async () => {
     const draftEvent = { ...mockEvent, status: EventStatus.DRAFT };
     mockEventModel.findById.mockReturnValue({
       exec: jest.fn().mockResolvedValue(draftEvent),
@@ -186,7 +192,7 @@ describe('EventsService', () => {
     isDeleted: false,
   };
 
-  it("devrait soft delete un événement existant", async () => {
+  it("should soft delete an existing event", async () => {
   
     mockEventModel.findByIdAndUpdate.mockResolvedValue({ ...mockEvent, isDeleted: true });
 
@@ -201,7 +207,7 @@ describe('EventsService', () => {
     expect(result.isDeleted).toBe(true);
   });
 
-  it("devrait lever NotFoundException si l'événement n'existe pas", async () => {
+  it("should throw NotFoundException if event does not exist", async () => {
    
     mockEventModel.findByIdAndUpdate.mockResolvedValue(null);
 
@@ -217,22 +223,22 @@ describe('EventsService', () => {
   });
 });
  describe("details events", () => {
-  it("devrait afficher l'événement par son id", async () => {
-    // Mock findById().exec() pour retourner mockEvent
+  it("should return an event by its id", async () => {
+  
     mockEventModel.findById.mockReturnValue({
       exec: jest.fn().mockResolvedValue(mockEvent),
     });
 
     const result = await service.findById(mockEventId);
 
-    // Vérifie que findById a été appelé avec le bon id
+    
     expect(mockEventModel.findById).toHaveBeenCalledWith(mockEventId);
 
-    // Vérifie que le résultat est bien l'événement mocké
+  
     expect(result).toEqual(mockEvent);
   });
 
-  it("devrait retourner null si l'événement n'existe pas", async () => {
+  it("should return null if event does not exist", async () => {
     mockEventModel.findById.mockReturnValue({
       exec: jest.fn().mockResolvedValue(null),
     });
@@ -244,7 +250,7 @@ describe('EventsService', () => {
   });
 });
  describe('getAllEvents', () => {
-    it('devrait retourner tous les événements non supprimés', async () => {
+    it('should return all non-deleted events', async () => {
       const mockEvents = [mockEvent];
       mockEventModel.find.mockResolvedValue(mockEvents);
 
@@ -256,7 +262,7 @@ describe('EventsService', () => {
   });
 
   describe('getPublishEvents', () => {
-    it('devrait retourner uniquement les événements publiés', async () => {
+    it('should return only published events', async () => {
       const publishedEvent = { ...mockEvent, status: EventStatus.PUBLISHED };
       mockEventModel.find.mockResolvedValue([publishedEvent]);
 
